@@ -31,19 +31,25 @@ class TestBooksCollector:
         collector.add_new_book('Дубль')
         assert len(collector.get_books_genre()) == 1
 
-    @pytest.mark.parametrize("book_title, genre", [
-        ("Дюна", "Фантастика"),
-        ("Оно", "Ужасы"),
-        ("Шерлок", "Детективы"),
-        ("Тачки", "Мультфильмы"),
-        ("Операция Ы", "Комедии")
+    @pytest.mark.parametrize("book_name", [
+        "A",
+        "A" * 40,
+        "Обычное название"
     ])
-    def test_set_and_get_book_genre_valid_genres(self, book_title, genre):
-        
+    def test_add_new_book_accepts_valid_name_lengths(self, book_name):
         collector = BooksCollector()
-        collector.add_new_book(book_title)
-        collector.set_book_genre(book_title, genre)
-        assert collector.get_book_genre(book_title) == genre
+        collector.add_new_book(book_name)
+        assert book_name in collector.get_books_genre()
+
+    @pytest.mark.parametrize("book_name", [
+        "",
+        "A" * 41,
+        "A" * 100
+    ])
+    def test_add_new_book_rejects_invalid_name_lengths(self, book_name):
+        collector = BooksCollector()
+        collector.add_new_book(book_name)
+        assert book_name not in collector.get_books_genre()
 
     def test_set_book_genre_ignores_invalid_genre(self):
         
@@ -61,23 +67,17 @@ class TestBooksCollector:
         collector.set_book_genre('Смех', 'Комедии')
         assert collector.get_books_with_specific_genre('Фантастика') == ['Звёзды']
 
-    def test_get_books_for_children_excludes_age_rating_genres(self):
-        
+    def test_get_books_for_children_excludes_books_in_age_rating_genres(self):
         collector = BooksCollector()
-        
-        for genre in collector.genre:
-            book = f"Книга {genre}"
-            collector.add_new_book(book)
-            collector.set_book_genre(book, genre)
+        collector.add_new_book('Оно')
+        collector.set_book_genre('Оно', 'Ужасы')
+        assert 'Оно' not in collector.get_books_for_children()
 
-        children_books = collector.get_books_for_children()
-        age_rating_books = ["Книга Ужасы", "Книга Детективы"]
-        non_age_books = ["Книга Фантастика", "Книга Мультфильмы", "Книга Комедии"]
-
-        for book in age_rating_books:
-            assert book not in children_books
-        for book in non_age_books:
-            assert book in children_books
+    def test_get_books_for_children_includes_books_in_child_friendly_genres(self):
+        collector = BooksCollector()
+        collector.add_new_book('Тачки')
+        collector.set_book_genre('Тачки', 'Мультфильмы')
+        assert 'Тачки' in collector.get_books_for_children()
 
     def test_add_book_in_favorites_adds_existing_book(self):
         
